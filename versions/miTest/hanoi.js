@@ -28,9 +28,14 @@ function start(){
 		
 		cuadro.pintarCuadro(body);
 		
+		cuadros[i] = cuadro; 
+		
 	}
 	
 
+}
+function click(id){
+	console.log(id);
 }
 
 function Cuadro(id){
@@ -45,11 +50,14 @@ function Cuadro(id){
 	this.float = "left";
 	this.numFichas= 4;
 	this.posFichas = new Array();
+	this.selected = false;
 
 	this.content = document.createElement("div");
+	this.content.setAttribute("id", "cuadro"+this.id);
 	
 	this.content.addEventListener("mouseover", function(){this.style.border = "2px solid blue";}, false);
 	this.content.addEventListener("mouseout", function(){this.style.border = "2px solid black";}, false);
+	this.content.addEventListener("click", click,false);
 	
 	
 	this.pintarCuadro = function(container){

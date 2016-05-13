@@ -8,6 +8,8 @@ window.addEventListener("load", iniciar, false);
 var cuerpo;
 const ALTURA = "40px";
 
+var movimientos = 0;
+
 var cuadro1 = new Cuadro(true);
 var cuadro2 = new Cuadro(false);
 var cuadro3 = new Cuadro(false);
@@ -65,7 +67,6 @@ function click3() {
 
 function click(cuadro) {
 	if (cuadro.elegido) {
-		console.log(cuadro);
 		seleccionarOrigenDestino(cuadro);
 	} else {
 		cuadro.caja.style.borderColor = "black";
@@ -229,21 +230,65 @@ function seleccionarOrigenDestino(cuadro){
 		destino.elegido = true;
 		
 		if(origen != destino){
-			console.log(destino);
 			if(!destino.tieneFichas() || (origen.obtenerFichaSuperior().valor < destino.obtenerFichaSuperior().valor)){
 				origen.quitarFichaSuperior();
 				origen.redibujarCaja();
 				destino.insertarFichaSuperior();
 				destino.redibujarCaja();
+				movimientos++;
+				actualizarContador();
 			}
 		}
 		
 		if(destino != undefined && origen != undefined){
 			reiniciarOrigenDestino();
 		}
+		
+		if(comprobarVictoria()){
+			victoria();
+		}
 	}
+}
+
+function comprobarVictoria(){
+	if(cuadro3.contenido[0] instanceof Relleno   && 
+	   cuadro3.contenido[1] instanceof FichaS    &&
+	   cuadro3.contenido[2] instanceof FichaM    &&
+	   cuadro3.contenido[3] instanceof FichaL    &&
+	   cuadro3.contenido[4] instanceof FichaXL){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+function victoria(){
+	var textoTitulo = document.createTextNode("Has ganado !!!");
+	var textoSubtitulo = document.createTextNode("Movimientos utilizados: "+movimientos);
+	var textoConsejo = document.createTextNode("Pulsa F5 para jugar de nuevo");
 	
+	cuerpo.removeChild(cuadro1.caja);
+	cuerpo.removeChild(cuadro2.caja);
+	cuerpo.removeChild(cuadro3.caja);
+	cuerpo.removeChild(document.getElementById("contador"));
 	
+	var titulo = document.createElement("h1");
+	titulo.appendChild(textoTitulo);
+	
+	var subtitulo = document.createElement("h2");
+	subtitulo.appendChild(textoSubtitulo);
+	
+	var consejo = document.createElement("h3");
+	consejo.appendChild(textoConsejo);
+	
+	cuerpo.appendChild(titulo);
+	cuerpo.appendChild(subtitulo);
+	cuerpo.appendChild(consejo);
+}
+
+function actualizarContador(){
+	var parrafo = document.getElementById("contador");
+	parrafo.innerHTML = "Movimientos: "+movimientos;
 }
 
 function reiniciarOrigenDestino(){
@@ -262,6 +307,7 @@ function reiniciarOrigenDestino(){
 
 function iniciar() {
 	cuerpo = document.getElementsByTagName("body")[0];
+	cuerpo.style.textAlign = "Center"; 
 
 	cuerpo.appendChild(cuadro1.caja);
 	cuerpo.appendChild(cuadro2.caja);
@@ -278,4 +324,13 @@ function iniciar() {
 	cuadro1.caja.addEventListener("click", click1, false);
 	cuadro2.caja.addEventListener("click", click2, false);
 	cuadro3.caja.addEventListener("click", click3, false);
+	
+	var texto = document.createTextNode("Movimientos: " + movimientos);
+	var parrafo = document.createElement("p");
+	
+	parrafo.style.clear = "both";
+	parrafo.style.paddingTop = "3em";
+	parrafo.setAttribute("id", "contador");
+	parrafo.appendChild(texto);
+	cuerpo.appendChild(parrafo);
 }

@@ -1,96 +1,149 @@
-window.addEventListener("load", start, false);
+window.addEventListener("load", main, false);
 
-function start(){
+var num_cuadros = 3;
+var num_fichas = 4;	
+var cuadros = Array(num_cuadros);
+
+/*Learned y Todo*/
+/*No veo forma de acceder a los metodos de los objetos desde el listener del atrobuto html, el listener devuelve this como la propiedad html,
+ * por lo que no encuentro otra forma para manipular las que invocar desde el listener un metodo de intercambio de fichas global  que queda pendiete
+ * de crear, asi como será necesario algun identificador en el html que se corresponda con la posicion en el array de donde tengo que llamar a los 
+ * metodos del objeto
+ * 
+ * Sabiendo esto, la proxima vez deberia pasar de hacer metodos en el objeto y hacer unos metodos globales que acepten la propiedad html, así
+ * estoy retorciendo la funcionalidad y dificultando la compresion. Los listener que modifican caracteristicas del html si funcionan muy bien */
+
+function main(){
 	body = document.getElementsByTagName("body")[0];
  
-	num_cuadros = 3;
-	num_fichas = 4;
+	var cuadroInicial = true;
 	
-	cuadros = new Array(num_cuadros);
-	
-	for(var i=0;i<num_cuadros;i++){
-		cuadro = new Cuadro(num_cuadros);
-		cuadro.id = i;
+	for(var i = 0; i < num_cuadros; i++){
+		cuadros[i] = new Cuadro(num_cuadros, num_fichas, cuadroInicial);
+		cuadros[i].rellenarFichas();
+		cuadros[i].repintarFichas();
+		body.appendChild(cuadros[i].html);
 		
-		cuadro.numFichas = num_fichas;
-		cuadro.posFichas = new Array(num_fichas);
-		for(var z=0 ; z < cuadro.posFichas.length; z++){
-			if(i == 0){
-				cuadro.posFichas[z] = z + 1;
+		cuadroInicial = false;
+	}
+	
+	
+
+}
+
+
+function Cuadro(numero_cuadros,numero_fichas,cuadroInicial){
+	this.html = document.createElement("div");	
+	this.fichas = new Array(numero_fichas);
+
+	
+	this.rellenarFichas = function(){};
+	
+	//configurar estilos cuadro
+	this.html.style.border = "2px solid black";
+	this.html.style.height = "200px";
+	this.html.style.width = (100/numero_fichas - 2*2) + "%";
+	this.html.style.paddingTop = "20px";
+	this.html.style.float = "left";
+	this.html.style.marginLeft = "2%";
+	this.html.style.marginRight = "2%";
+	
+	
+	this.rellenarFichas = function(){ 
+		for(var i = 0 ; i < numero_fichas; i++){
+			if(cuadroInicial){
+				val_fich = i + 1;
+				this.fichas[i] = new Ficha(val_fich, numero_fichas);
 			}else{
-				cuadro.posFichas[z] = 0;
-			}		
+				this.fichas[i] = new Relleno(numero_fichas);
+			}
+			
+			
+		}
+	};
+	
+	this.repintarFichas = function(){ 
+
+		while(this.html.hasChildNodes())
+			this.html.removeChild(this.html.firstChild);
+		
+		for(var i = 0 ; i < this.fichas.length; i++)
+			this.html.appendChild(this.fichas[i].html);
+		
+		this.resetListeners();
+	};
+	
+
+	this.quitarFichaSuperior = function(){
+		for(var i = 0; i < this.fichas.length; i++){
+			if(this.fichas[i] instanceof Ficha){
+				var ficha_superior = this.fichas[i];
+				this.fichas[i] = new Relleno(numero_fichas);
+				return ficha_superior;
+			}
 		}
 		
-		cuadro.width = 85 / num_cuadros+"%";
-		cuadro.marginLeft = 5 / num_cuadros+"%";
-		cuadro.marginRight = 5 / num_cuadros+"%";
+	};
+	
+	this.ponerFichaSuperior = function(ficha){
 		
-		cuadro.pintarCuadro(body);
-		
-		cuadros[i] = cuadro; 
-		
-	}
+		for(i = this.fichas.length - 1; i >= 0 ; i--){
+			
+			if(this.fichas[i] instanceof Relleno){
+				this.fichas[i] = ficha;
+				return true;
+			}		
+		}
+		return false;
+	};
+	
+	this.resetListeners = function(){
+		this.html.addEventListener("click",this.htmlClick,false);
+		this.html.addEventListener("mouseover",this.htmlOver,false);
+		this.html.addEventListener("mouseout",this.htmlOut,false);
+		}
+	
+	this.htmlClick = function(){
+		console.log(this);
+	};
+	
+	this.htmlOver = function(){
+		this.style.backgroundColor = "#1144DD";
+	};
+	
+	this.htmlOut = function(){
+		this.style.backgroundColor = "#FFFFFF";
+	};
 	
 
+	
 }
-function click(id){
-	console.log(id);
+
+function Ficha(numero_ficha, total_fichas){
+	this.html = document.createElement("div");	
+	this.numero_ficha = numero_ficha;
+	this.total_fichas = total_fichas;
+
+	//configuramos estilo de las fichas
+	this.html.style.height = 200 / total_fichas + "px";
+	this.html.style.width = 100* numero_ficha/total_fichas - 2 * 2 + "%";
+	this.html.style.marginLeft = "2%";
+	this.html.style.margin = "auto";
+	//this.html.style.backgroundColor = Number(255 - (numero_ficha/total_fichas * 255)).toString(16);
+	this.html.style.backgroundColor = "#" + ((numero_ficha + 1) * 111111);
 }
 
-function Cuadro(id){
-	this.id = id;
-	this.width="30%";
-	this.height="200px";
-	this.marginLeft ="1.5%";
-	this.marginRight ="1.5%";
-	this.background="#EDEADE";
-	this.border="2px solid black";
-	this.borderHover = "2px solid blue";
-	this.float = "left";
-	this.numFichas= 4;
-	this.posFichas = new Array();
-	this.selected = false;
-
-	this.content = document.createElement("div");
-	this.content.setAttribute("id", "cuadro"+this.id);
+function Relleno(total_fichas){
+	this.html = document.createElement("div");	
+	this.html.style.height = 200 / total_fichas + "px";
 	
-	this.content.addEventListener("mouseover", function(){this.style.border = "2px solid blue";}, false);
-	this.content.addEventListener("mouseout", function(){this.style.border = "2px solid black";}, false);
-	this.content.addEventListener("click", click,false);
-	
-	
-	this.pintarCuadro = function(container){
-		this.content.style.width = this.width;
-		this.content.style.height = this.height;
-		this.content.style.marginLeft = this.marginLeft;
-		this.content.style.marginRight = this.marginRight;
-		this.content.style.marginTop = parseInt(this.height) / (this.numFichas + 1) + "px";
-		this.content.style.border = this.border;
-		this.content.style.float = this.float;
-		this.content.style.backgroundColor= this.background;
-		this.pintarFichas();
-		container.appendChild(this.content);
-	}
-	
-	this.pintarFichas = function(container){
-		var ficha_relleno = document.createElement("div");
-		ficha_relleno.style.height= parseInt(this.height) / (this.numFichas + 1) + "px";
-		this.content.appendChild(ficha_relleno);
-		
-		for(var i = 0; i < this.posFichas.length; i++){
-			ficha = document.createElement("div");
-			ficha.style.width = 90 * this.posFichas[i] /num_fichas+"%" ;
-			ficha.style.height = parseInt(this.height) / (this.numFichas + 1) + "px";
-			ficha.style.marginLeft = (100 - parseInt(ficha.style.width)) /2 + "%";
-			ficha.style.marginRight = ficha.style.marginLeft;
-			ficha.style.border = "0px solid white";
-			ficha.style.backgroundColor = "#"+this.posFichas[i]*2+""+this.posFichas[i]*2+""+this.posFichas[i]*2;
-			this.content.appendChild(ficha);
-		}				
-	}
-
 }
+
+
+
+
+
+
 
 
 

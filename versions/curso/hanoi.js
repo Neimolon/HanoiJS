@@ -265,7 +265,7 @@ function comprobarVictoria(){
 function victoria(){
 	var textoTitulo = document.createTextNode("Has ganado !!!");
 	var textoSubtitulo = document.createTextNode("Movimientos utilizados: "+movimientos);
-	var textoConsejo = document.createTextNode("Pulsa F5 para jugar de nuevo");
+	var textoConsejo = document.createTextNode(" Rebeca esta muy buena y me va a dar un beso");
 	
 	cuerpo.removeChild(cuadro1.caja);
 	cuerpo.removeChild(cuadro2.caja);

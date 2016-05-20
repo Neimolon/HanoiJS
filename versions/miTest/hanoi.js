@@ -1,17 +1,27 @@
 window.addEventListener("load", main, false);
 
 var num_cuadros = 3;
-var num_fichas = 4;	
+var num_fichas = 10;	
 var cuadros = Array(num_cuadros);
 
-/*Learned y Todo*/
-/*No veo forma de acceder a los metodos de los objetos desde el listener del atrobuto html, el listener devuelve this como la propiedad html,
- * por lo que no encuentro otra forma para manipular las que invocar desde el listener un metodo de intercambio de fichas global  que queda pendiete
- * de crear, asi como será necesario algun identificador en el html que se corresponda con la posicion en el array de donde tengo que llamar a los 
- * metodos del objeto
+/* 
+ * Ok, voy a valerme del array que guarda los objetos y meter en una variable la ficha que se esta seleccionando en cada click 
+ * para poder controlar desde los eventos del objeto el movimiento del juego, sin metodos globales extras. Esta es la forma en 
+ * la que me lo habia propuesto hacer originalmente, pero no me acaba de hacer tilin. 
+ *
+ * Añadidas en el click del raton las restricciones de movimientos prohibidos.
  * 
- * Sabiendo esto, la proxima vez deberia pasar de hacer metodos en el objeto y hacer unos metodos globales que acepten la propiedad html, así
- * estoy retorciendo la funcionalidad y dificultando la compresion. Los listener que modifican caracteristicas del html si funcionan muy bien */
+ *  Todo:
+ *  contador de movimientos
+ *  control de si se ha ganado
+ *  borde rojo fichas seleccionadas
+ *  
+ *  Fix:
+ *  la generacion automatica de color al crear de 10 fichas deja el background en blanco
+ */
+
+var ficha_seleccionada;
+
 
 function main(){
 	body = document.getElementsByTagName("body")[0];
@@ -19,25 +29,20 @@ function main(){
 	var cuadroInicial = true;
 	
 	for(var i = 0; i < num_cuadros; i++){
-		cuadros[i] = new Cuadro(num_cuadros, num_fichas, cuadroInicial);
+		cuadros[i] = new Cuadro(i,num_cuadros, num_fichas, cuadroInicial);
 		cuadros[i].rellenarFichas();
 		cuadros[i].repintarFichas();
+		
 		body.appendChild(cuadros[i].html);
 		
 		cuadroInicial = false;
 	}
-	
-	
-
 }
 
-
-function Cuadro(numero_cuadros,numero_fichas,cuadroInicial){
-	this.html = document.createElement("div");	
+function Cuadro(id_cuadro,numero_cuadros,numero_fichas,cuadroInicial){
+	this.html = document.createElement("div");
+	this.html.setAttribute("id", id_cuadro);
 	this.fichas = new Array(numero_fichas);
-
-	
-	this.rellenarFichas = function(){};
 	
 	//configurar estilos cuadro
 	this.html.style.border = "2px solid black";
@@ -57,8 +62,6 @@ function Cuadro(numero_cuadros,numero_fichas,cuadroInicial){
 			}else{
 				this.fichas[i] = new Relleno(numero_fichas);
 			}
-			
-			
 		}
 	};
 	
@@ -73,6 +76,16 @@ function Cuadro(numero_cuadros,numero_fichas,cuadroInicial){
 		this.resetListeners();
 	};
 	
+	this.verFichaSuperior = function(){
+		for(var i = 0; i < this.fichas.length; i++){
+			if(this.fichas[i] instanceof Ficha){
+				var ficha_superior = this.fichas[i];
+				return ficha_superior;
+			}
+		}
+		
+		return null;	
+	};
 
 	this.quitarFichaSuperior = function(){
 		for(var i = 0; i < this.fichas.length; i++){
@@ -88,7 +101,6 @@ function Cuadro(numero_cuadros,numero_fichas,cuadroInicial){
 	this.ponerFichaSuperior = function(ficha){
 		
 		for(i = this.fichas.length - 1; i >= 0 ; i--){
-			
 			if(this.fichas[i] instanceof Relleno){
 				this.fichas[i] = ficha;
 				return true;
@@ -104,7 +116,23 @@ function Cuadro(numero_cuadros,numero_fichas,cuadroInicial){
 		}
 	
 	this.htmlClick = function(){
-		console.log(this);
+		var id = this.getAttribute("id");
+		
+		if(ficha_seleccionada == undefined){
+			console.log("quitar");
+			ficha_seleccionada = cuadros[id].quitarFichaSuperior();
+		}else{
+			console.log("poner");
+			console.log(ficha_seleccionada.numero_ficha +" - "+ cuadros[id].numero_ficha);
+			
+			if(cuadros[id].verFichaSuperior() == undefined || ficha_seleccionada.numero_ficha < cuadros[id].verFichaSuperior().numero_ficha){
+				cuadros[id].ponerFichaSuperior(ficha_seleccionada);
+				ficha_seleccionada = null;
+			}
+		}
+		
+		cuadros[id].repintarFichas();
+		
 	};
 	
 	this.htmlOver = function(){
@@ -114,8 +142,6 @@ function Cuadro(numero_cuadros,numero_fichas,cuadroInicial){
 	this.htmlOut = function(){
 		this.style.backgroundColor = "#FFFFFF";
 	};
-	
-
 	
 }
 
@@ -138,18 +164,6 @@ function Relleno(total_fichas){
 	this.html.style.height = 200 / total_fichas + "px";
 	
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

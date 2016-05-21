@@ -3,21 +3,25 @@ window.addEventListener("load", main, false);
 var num_cuadros = 3;
 var num_fichas = 10;	
 var cuadros = Array(num_cuadros);
+var contador = new ContadorMovimientos();
 
 /* 
- * Ok, voy a valerme del array que guarda los objetos y meter en una variable la ficha que se esta seleccionando en cada click 
- * para poder controlar desde los eventos del objeto el movimiento del juego, sin metodos globales extras. Esta es la forma en 
- * la que me lo habia propuesto hacer originalmente, pero no me acaba de hacer tilin. 
+ * Fixed:
+ * Relleno automatico color fondo fichas 
+ * Error anchura automática de las cajas
  *
- * Añadidas en el click del raton las restricciones de movimientos prohibidos.
+ * Done:
+ * Metodo Cuadro.comprobarVictoria()
+ * Constructor ContadorMovimientos();
+ * Añadir contador funcional al body
+ * Añadir mensaje de victoria al body
  * 
- *  Todo:
- *  contador de movimientos
- *  control de si se ha ganado
- *  borde rojo fichas seleccionadas
- *  
- *  Fix:
- *  la generacion automatica de color al crear de 10 fichas deja el background en blanco
+ * Todo:
+ * Un cuadro que permita introducir el numero de fichas y cuadros que 
+ * el usuario decida que aparezcan en el juego.
+ * 
+ * Fix:
+ * El calculo automático de la anchura de las fichas falla cuando es un numero elevado de fichas.
  */
 
 var ficha_seleccionada;
@@ -34,9 +38,10 @@ function main(){
 		cuadros[i].repintarFichas();
 		
 		body.appendChild(cuadros[i].html);
-		
 		cuadroInicial = false;
 	}
+	
+	body.appendChild(contador.html);
 }
 
 function Cuadro(id_cuadro,numero_cuadros,numero_fichas,cuadroInicial){
@@ -47,7 +52,7 @@ function Cuadro(id_cuadro,numero_cuadros,numero_fichas,cuadroInicial){
 	//configurar estilos cuadro
 	this.html.style.border = "2px solid black";
 	this.html.style.height = "200px";
-	this.html.style.width = (100/numero_fichas - 2*2) + "%";
+	this.html.style.width = (100/numero_cuadros - 2.5 *2 ) + "%";
 	this.html.style.paddingTop = "20px";
 	this.html.style.float = "left";
 	this.html.style.marginLeft = "2%";
@@ -109,6 +114,22 @@ function Cuadro(id_cuadro,numero_cuadros,numero_fichas,cuadroInicial){
 		return false;
 	};
 	
+	this.comprobarVictoria = function(){
+		var fichas_en_caja = 0;
+		if(id_cuadro == numero_cuadros - 1){
+			for(var i = 0; i < this.fichas.length; i++){
+				if(this.fichas[i] instanceof Ficha){
+					fichas_en_caja++;
+				}
+			}
+			
+			if(numero_fichas == fichas_en_caja)
+				return true;
+		}
+		
+		return false;
+	};
+	
 	this.resetListeners = function(){
 		this.html.addEventListener("click",this.htmlClick,false);
 		this.html.addEventListener("mouseover",this.htmlOver,false);
@@ -117,17 +138,26 @@ function Cuadro(id_cuadro,numero_cuadros,numero_fichas,cuadroInicial){
 	
 	this.htmlClick = function(){
 		var id = this.getAttribute("id");
-		
+
 		if(ficha_seleccionada == undefined){
-			console.log("quitar");
+			id_origen = id;
 			ficha_seleccionada = cuadros[id].quitarFichaSuperior();
-		}else{
-			console.log("poner");
-			console.log(ficha_seleccionada.numero_ficha +" - "+ cuadros[id].numero_ficha);
 			
+		}else{
 			if(cuadros[id].verFichaSuperior() == undefined || ficha_seleccionada.numero_ficha < cuadros[id].verFichaSuperior().numero_ficha){
 				cuadros[id].ponerFichaSuperior(ficha_seleccionada);
 				ficha_seleccionada = null;
+				
+				contador.incrementarMovimientos();
+				contador.repintarContador();
+				
+				if(cuadros[id].comprobarVictoria()){
+					var victoria = document.createElement("p");
+					victoria.style.textAlign = "center";
+					var texto_victoria = document.createTextNode("Enhorabuena!!! Has ganado Pulsa F5 para volver a jugar. Número total de movimientos :" +contador.movimientos );
+					victoria.appendChild(texto_victoria);
+					body.appendChild(victoria);
+				}
 			}
 		}
 		
@@ -149,14 +179,15 @@ function Ficha(numero_ficha, total_fichas){
 	this.html = document.createElement("div");	
 	this.numero_ficha = numero_ficha;
 	this.total_fichas = total_fichas;
+	this.bg_color_hex_byte = (256 - Number.parseInt(numero_ficha/total_fichas * 255)).toString(16);
 
 	//configuramos estilo de las fichas
 	this.html.style.height = 200 / total_fichas + "px";
 	this.html.style.width = 100* numero_ficha/total_fichas - 2 * 2 + "%";
 	this.html.style.marginLeft = "2%";
 	this.html.style.margin = "auto";
-	//this.html.style.backgroundColor = Number(255 - (numero_ficha/total_fichas * 255)).toString(16);
-	this.html.style.backgroundColor = "#" + ((numero_ficha + 1) * 111111);
+	this.html.style.backgroundColor = "#"+this.bg_color_hex_byte + this.bg_color_hex_byte + this.bg_color_hex_byte;
+
 }
 
 function Relleno(total_fichas){
@@ -165,97 +196,35 @@ function Relleno(total_fichas){
 	
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-window.addEventListener("load",init,false);
-
-function init(){
-	hanoiGame = new Hanoi();
-	hanoiGame.start();
-}
-
-function crearDiv(){
-	return document.createElement("div");
-}
-
-function Hanoi(){
-	this.num_cajas = 3;
-	this.num_fichas = 4;
-	this.layout = new Layout().layout;
+function ContadorMovimientos(){
+	this.movimientos = 0;
+	this.html = document.createElement("div");
+	this.htmlText = document.createElement("p");
+	this.texto = document.createTextNode("Número de movimientos: " + this.movimientos);
 	
-	this.start = function(){
-		body = document.getElementsByTagName("body")[0];
-		body.appendChild(this.layout);
-	};
-
-	//Config
-	this.checkConfig = function(){
+	this.html.style.height = "50px";
+	this.html.style.width = "100%";
+	this.html.style.margin = "30px auto";
+	this.html.style.border = "2px solid black";
+	this.html.style.float = "left";
+	this.html.style.clear = "both";
+	
+	this.htmlText.style.textAlign = "center";
+	
+	this.htmlText.appendChild(this.texto);
+	this.html.appendChild(this.htmlText);
+	
+	this.incrementarMovimientos = function(){
+		this.movimientos++;
+		this.texto = document.createTextNode("Número de movimientos: " + this.movimientos);
+	}
+	
+	this.repintarContador = function(){
+		this.html.removeChild(this.html.firstChild);
+		this.html.appendChild(this.texto);
 
 	};
 	
-	this.setConfigurations= function(cajas,fichas){
-		this.num_cajas = cajas;
-		this.num_fichas= fichas;
-	};
+	
 	
 }
-
-function Layout(){
-	this.configArea = document.createElement("div");
-	this.configArea.setAttribute("id", "configuracion");
-	this.statsArea = document.createElement("div");
-	this.statsArea.setAttribute("id", "stats");
-	this.gameArea = document.createElement("div");
-	this.gameArea.setAttribute("id", "hanoi");
-
-	this.layout = document.createElement("div");
-	this.layout.setAttribute("id", "layout");
-	
-	this.layout.appendChild(this.configArea);
-	this.layout.appendChild(this.statsArea);
-	this.layout.appendChild(this.gameArea);
-	
-	this.setStyles = function(){
-		this.configArea.style.width = "40%";
-		this.configArea.style.height = "150px";
-		this.configArea.style.marginLeft = "3%";
-		this.configArea.style.marginRight = "3%";
-		this.configArea.style.marginBottom = "40px";
-		this.configArea.style.border = "solid black";
-		this.configArea.style.borderWidth = "2%";
-		//this.configArea.style.backgroundColor("#EDEADE");	
-	};
-	
-	this.setStyles();
-	 
-}
-
-
-
-
-
-*/
